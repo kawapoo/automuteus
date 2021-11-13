@@ -25,7 +25,7 @@ const (
 	DebugState
 	ASCII
 	Stats
-	Premium
+	WorkerBOT
 	Null
 )
 
@@ -347,24 +347,24 @@ var AllCommands = []Command{
 		IsOperator: true,
 	},
 	{
-		CommandType: Premium,
-		Command:     "premium",
-		Example:     "premium",
+		CommandType: WorkerBOT,
+		Command:     "workerbot",
+		Example:     "workerbot",
 		ShortDesc: &i18n.Message{
-			ID:    "commands.AllCommands.Premium.shortDesc",
-			Other: "View Premium Bot Features",
+			ID:    "commands.AllCommands.WorkerBOT.shortDesc",
+			Other: "Invite WORKER BOTs",
 		},
 		Description: &i18n.Message{
-			ID:    "commands.AllCommands.Premium.desc",
-			Other: "View all the features and perks of Premium AutoMuteUs membership",
+			ID:    "commands.AllCommands.WorkerBOT.desc",
+			Other: "Invite WORKER BOTs to speed up bot work",
 		},
 		Arguments: &i18n.Message{
-			ID:    "commands.AllCommands.Premium.args",
+			ID:    "commands.AllCommands.WorkerBOT.args",
 			Other: "None",
 		},
-		Aliases:    []string{"donate", "paypal", "prem", "$"},
+		Aliases:    []string{"add", "invite", "worker", "w"},
 		IsSecret:   false,
-		Emoji:      "💎",
+		Emoji:      "🧑‍✈️",
 		IsAdmin:    false,
 		IsOperator: false,
 	},

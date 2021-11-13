@@ -773,6 +773,45 @@ func premiumEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *
 	return &msg
 }
 
+func workerEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+	desc := ""
+	fields := []*discordgo.MessageEmbedField{}
+
+	fields = []*discordgo.MessageEmbedField{
+		{
+			Name: sett.LocalizeMessage(&i18n.Message{
+				ID:    "responses.workerResponse.InvitePage",
+				Other: "🤖 Invite WORKER BOTs",
+			}),
+			Value: sett.LocalizeMessage(&i18n.Message{
+				ID:    "responses.workerResponse.InvitePageDesc",
+				Other: "If you want to speed up Bot's work, invite WORKER BOTs from [AutoMuteUs68](https://www.automuteus.68-muya.com/)!",
+			}),
+			Inline: false,
+		}
+	}
+
+	msg := discordgo.MessageEmbed{
+		URL:  "https://www.automuteus.68-muya.com/",
+		Type: "",
+		Title: sett.LocalizeMessage(&i18n.Message{
+			ID:    "responses.wokerResponse.Title",
+			Other: "🤖 Invite WORKER BOTs 🤖",
+		}),
+		Description: desc,
+		Timestamp:   time.Now().Format(ISO8601),
+		Color:       10181046, // PURPLE
+		Footer:      nil,
+		Image:       nil,
+		Thumbnail:   nil,
+		Video:       nil,
+		Provider:    nil,
+		Author:      nil,
+		Fields:      fields,
+	}
+	return &msg
+}
+
 func nonPremiumSettingResponse(sett *storage.GuildSettings) string {
 	return sett.LocalizeMessage(&i18n.Message{
 		ID:    "responses.nonPremiumSetting.Desc",
