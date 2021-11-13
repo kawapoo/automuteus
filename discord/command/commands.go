@@ -364,7 +364,7 @@ var AllCommands = []Command{
 		},
 		Aliases:    []string{"add", "invite", "worker", "w"},
 		IsSecret:   false,
-		Emoji:      "🧑‍✈️",
+		Emoji:      "🤖",
 		IsAdmin:    false,
 		IsOperator: false,
 	},
