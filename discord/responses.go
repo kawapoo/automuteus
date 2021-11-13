@@ -781,7 +781,7 @@ func workerEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *s
 		{
 			Name: sett.LocalizeMessage(&i18n.Message{
 				ID:    "responses.workerResponse.InvitePage",
-				Other: "🤖 Invite WORKER BOTs",
+				Other: "Invite WORKER BOTs",
 			}),
 			Value: sett.LocalizeMessage(&i18n.Message{
 				ID:    "responses.workerResponse.InvitePageDesc",
