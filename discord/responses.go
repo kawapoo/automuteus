@@ -285,15 +285,15 @@ func (bot *Bot) infoResponse(guildID string, sett *storage.GuildSettings) *disco
 			ID:    "responses.statsResponse.Invite",
 			Other: "Invite",
 		}),
-		Value:  "[add.automute.us](https://add.automute.us)",
+		Value:  "[68-muya.com](https://www.automuteus.68-muya.com/)",
 		Inline: true,
 	}
 	fields[11] = &discordgo.MessageEmbedField{
 		Name: sett.LocalizeMessage(&i18n.Message{
-			ID:    "responses.statsResponse.Donate",
-			Other: "Premium",
+			ID:    "responses.statsResponse.AmongUsCapture",
+			Other: "AmongUsCapture",
 		}),
-		Value:  "[PayPal](" + BasePremiumURL + guildID + ")",
+		Value:  "[github.com](https://github.com/automuteus/amonguscapture#automatic-installation)",
 		Inline: true,
 	}
 

@@ -12,7 +12,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-const DefaultLang = "en"
+const DefaultLang = "ja"
 
 var LocalePath = ""
 
