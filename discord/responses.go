@@ -773,11 +773,7 @@ func premiumEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *
 	return &msg
 }
 
-<<<<<<< HEAD
 func workerEmbedResponse(guildID string, sett *storage.GuildSettings) *discordgo.MessageEmbed {
-=======
-func workerEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *storage.GuildSettings) *discordgo.MessageEmbed {
->>>>>>> 1fcce62... add invite page's link
 	desc := ""
 	fields := []*discordgo.MessageEmbedField{}
 
@@ -785,29 +781,14 @@ func workerEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *s
 		{
 			Name: sett.LocalizeMessage(&i18n.Message{
 				ID:    "responses.workerResponse.InvitePage",
-<<<<<<< HEAD
 				Other: "Invite WORKER BOTs",
 			}),
 			Value: sett.LocalizeMessage(&i18n.Message{
 				ID:    "responses.workerResponse.InvitePageDesc",
-<<<<<<< HEAD
 				Other: "If you want to speed up Bot's work, invite WORKER BOTs from [AutoMuteUs68](https://www.automuteus.68-muya.com/)!",
-=======
-				Other: "If you want to speed up Bot's work, invite WORKER BOTs from \[AutoMuteUs68\](https://www.automuteus.68-muya.com/)!",
->>>>>>> 083996fd417bf86f4ea4b7e04ad83111791c47a7
 			}),
 			Inline: false,
 		},
-=======
-				Other: "🤖 Invite WORKER BOTs",
-			}),
-			Value: sett.LocalizeMessage(&i18n.Message{
-				ID:    "responses.workerResponse.InvitePageDesc",
-				Other: "If you want to speed up Bot's work, invite WORKER BOTs from [AutoMuteUs68](https://www.automuteus.68-muya.com/)!",
-			}),
-			Inline: false,
-		}
->>>>>>> 1fcce62... add invite page's link
 	}
 
 	msg := discordgo.MessageEmbed{
