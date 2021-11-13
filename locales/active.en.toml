@@ -322,6 +322,13 @@
 "state.phase.LOBBY" = "LOBBY"
 "state.phase.MENU" = "MENU"
 "state.phase.TASKS" = "TASKS"
+"responses.statsResponse.AmongUsCapture" = "AmongUsCapture"
+"commands.AllCommands.WorkerBOT.shortDesc" = "Invite WORKER BOTs"
+"commands.AllCommands.WorkerBOT.desc" = "Invite WORKER BOTs to speed up bot work"
+"commands.AllCommands.WorkerBOT.args" = "None"
+"responses.workerResponse.InvitePage" = "Invite WORKER BOTs"
+"responses.workerResponse.InvitePageDesc" = "If you want to speed up Bot's work, invite WORKER BOTs from [AutoMuteUs68](https://www.automuteus.68-muya.com/)!"
+"responses.wokerResponse.Title" = "🤖 Invite WORKER BOTs 🤖"
 
 ["ascii.AsciiStarfield.remains"]
 one = "Impostor remains"

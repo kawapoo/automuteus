@@ -1273,3 +1273,31 @@ other = "MENU"
 ["state.phase.TASKS"]
 hash = "sha1-48138eaada0db4248f7c6b4281cd45d0c1fa4c15"
 other = "TASKS"
+
+["responses.statsResponse.AmongUsCapture"]
+hash = "sha1-7613aba7c1fe7be5b367426a5718a33abe6b8bb2"
+other = "AmongUsCapture"
+
+["commands.AllCommands.WorkerBOT.shortDesc"]
+hash = "sha1-b2a995c7eaf5b734c4e14390e5d7c4904bde0be1"
+other = "WORKER BOTの招待"
+
+["commands.AllCommands.WorkerBOT.desc"]
+hash = "sha1-a4fe7fa278327e8e41f988eb500193139491e3d0"
+other = "ミュートのスピードアップのためにWORKER BOTを招待"
+
+["commands.AllCommands.WorkerBOT.args"]
+hash = "sha1-6eef6648406c333a4035cd5e60d0bf2ecf2606d7"
+other = "無し"
+
+["responses.workerResponse.InvitePage"]
+hash = "sha1-b2a995c7eaf5b734c4e14390e5d7c4904bde0be1"
+other = "WORKER BOTの招待"
+
+["responses.workerResponse.InvitePageDesc"]
+hash = "sha1-75dacf8d7c9eaa7788d28a19ca1d2c07f95f4e83"
+other = "もしAutoMuteUs68の動作を早めたいのであれば、[AutoMuteUs68](https://www.automuteus.68-muya.com/)からWORKER BOTを招待しましょう！"
+
+["responses.wokerResponse.Title"]
+hash = "sha1-682f2fecaf758045a8db692d0385fff644f3255e"
+other = "🤖 WOKER BOTの招待 🤖"
