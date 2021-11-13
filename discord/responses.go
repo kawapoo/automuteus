@@ -781,11 +781,11 @@ func workerEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *s
 		{
 			Name: sett.LocalizeMessage(&i18n.Message{
 				ID:    "responses.workerResponse.InvitePage",
-				Other: "🤖 Invite WORKER BOTs",
+				Other: "Invite WORKER BOTs",
 			}),
 			Value: sett.LocalizeMessage(&i18n.Message{
 				ID:    "responses.workerResponse.InvitePageDesc",
-				Other: "If you want to speed up Bot's work, invite WORKER BOTs from [AutoMuteUs68](https://www.automuteus.68-muya.com/)!",
+				Other: "If you want to speed up Bot's work, invite WORKER BOTs from \[AutoMuteUs68\](https://www.automuteus.68-muya.com/)!",
 			}),
 			Inline: false,
 		}

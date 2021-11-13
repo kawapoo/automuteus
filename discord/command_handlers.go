@@ -447,29 +447,8 @@ func (bot *Bot) HandleCommand(isAdmin, isPermissioned bool, sett *storage.GuildS
 				}
 			}
 
-		case command.Premium:
-			premStatus, days := bot.PostgresInterface.GetGuildPremiumStatus(m.GuildID)
-			if len(args[1:]) == 0 {
-				s.ChannelMessageSendEmbed(m.ChannelID, premiumEmbedResponse(m.GuildID, premStatus, days, sett))
-			} else {
-				tier := premium.FreeTier
-				if !premium.IsExpired(premStatus, days) {
-					tier = premStatus
-				}
-				arg := strings.ToLower(args[1])
-				if isAdmin {
-					if arg == "invite" || arg == "invites" || arg == "inv" {
-						_, err := s.ChannelMessageSendEmbed(m.ChannelID, premiumInvitesEmbed(tier, sett))
-						if err != nil {
-							log.Println(err)
-						}
-					} else {
-						s.ChannelMessageSend(m.ChannelID, "Sorry, I didn't recognize that premium command or argument!")
-					}
-				} else {
-					s.ChannelMessageSend(m.ChannelID, "Viewing the premium invites is an Admin-only command")
-				}
-			}
+		case command.WorkerBOT:
+			s.ChannelMessageSendEmbed(m.ChannelID, workerEmbedResponse(m.GuildID, premStatus, days, sett))
 
 		default:
 			s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
