@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/automuteus/utils/pkg/locale"
+	"github.com/kawapoo/utils/pkg/locale"
 	storage2 "github.com/automuteus/utils/pkg/storage"
 	"io"
 	"log"
@@ -52,7 +52,7 @@ func discordMainWrapper() error {
 				log.Println("Issue creating sample config.txt")
 				return err
 			}
-			_, err = f.WriteString(fmt.Sprintf("DISCORD_BOT_TOKEN=\nBOT_LANG=%s\n", "ja"))
+			_, err = f.WriteString(fmt.Sprintf("DISCORD_BOT_TOKEN=\nBOT_LANG=%s\n", locale.DefaultLang))))
 			f.Close()
 		}
 	}

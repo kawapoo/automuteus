@@ -46,7 +46,6 @@ func NewMapItem(name string, sett *settings.GuildSettings) (*MapItem, error) {
 	}
 
 	BaseMapURL += sett.GetLanguage() + "/"
-	
 
 	base, err := url.Parse(BaseMapURL)
 	if err != nil {
