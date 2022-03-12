@@ -36,7 +36,11 @@ const (
 	CommandEnumDebugState
 	CommandEnumASCII
 	CommandEnumStats
+<<<<<<< HEAD
 	CommandEnumPremium
+=======
+	CommandEnumWorkerBOT
+>>>>>>> add_old-customize
 )
 
 const NoLock string = "Could not obtain lock"
@@ -401,6 +405,7 @@ func init() {
 			fn: commandFnSettings,
 		},
 		{
+<<<<<<< HEAD
 			CommandType: CommandEnumPremium,
 			Command:     "premium",
 			Example:     "premium",
@@ -423,6 +428,30 @@ func init() {
 			IsOperator: false,
 
 			fn: commandFnPremium,
+=======
+			CommandType: CommandEnumWorkerBOT,
+			Command:     "workerbot",
+			Example:     "workerbot",
+			ShortDesc: &i18n.Message{
+				ID:    "commands.AllCommands.WorkerBOT.shortDesc",
+				Other: "Invite WORKER BOTs",
+			},
+			Description: &i18n.Message{
+				ID:    "commands.AllCommands.WorkerBOT.desc",
+				Other: "Invite WORKER BOTs to speed up bot work",
+			},
+			Arguments: &i18n.Message{
+				ID:    "commands.AllCommands.WorkerBOT.args",
+				Other: "None",
+			},
+			Aliases:    []string{"add", "invite", "worker", "w"},
+			IsSecret:   false,
+			Emoji:      "🤖",
+			IsAdmin:    false,
+			IsOperator: false,
+
+			fn: commandFnWorkerBOT,
+>>>>>>> add_old-customize
 		},
 		{
 			CommandType: CommandEnumStats,
@@ -1101,3 +1130,19 @@ func commandFnPremium(
 		}
 	}
 }
+<<<<<<< HEAD
+=======
+
+func commandFnWorkerBOT(
+	bot *Bot,
+	_ bool,
+	_ bool,
+	sett *settings.GuildSettings,
+	guild *discordgo.Guild,
+	message *discordgo.MessageCreate,
+	_ []string,
+	_ *Command,
+) (string, interface{}) {
+	return message.ChannelID, workerEmbedResponse(message.GuildID, sett)
+}
+>>>>>>> add_old-customize

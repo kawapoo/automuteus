@@ -285,15 +285,15 @@ func (bot *Bot) infoResponse(guildID string, sett *settings.GuildSettings) *disc
 			ID:    "responses.statsResponse.Invite",
 			Other: "Invite",
 		}),
-		Value:  "[add.automute.us](https://add.automute.us)",
+		Value:  "[68-muya.com](https://www.automuteus.68-muya.com/)",
 		Inline: true,
 	}
 	fields[11] = &discordgo.MessageEmbedField{
 		Name: sett.LocalizeMessage(&i18n.Message{
-			ID:    "responses.statsResponse.Donate",
-			Other: "Premium",
+			ID:    "responses.statsResponse.AmongUsCapture",
+			Other: "AmongUsCapture",
 		}),
-		Value:  "[PayPal](" + BasePremiumURL + guildID + ")",
+		Value:  "[github.com](https://github.com/automuteus/amonguscapture#automatic-installation)",
 		Inline: true,
 	}
 
@@ -974,3 +974,45 @@ func (bot *Bot) privacyResponse(guildID, authorID, arg string, sett *settings.Gu
 	}
 	return &msg
 }
+<<<<<<< HEAD
+=======
+
+func workerEmbedResponse(guildID string, sett *settings.GuildSettings) *discordgo.MessageEmbed {
+	desc := ""
+	fields := []*discordgo.MessageEmbedField{}
+
+	fields = []*discordgo.MessageEmbedField{
+		{
+			Name: sett.LocalizeMessage(&i18n.Message{
+				ID:    "responses.workerResponse.InvitePage",
+				Other: "Invite WORKER BOTs",
+			}),
+			Value: sett.LocalizeMessage(&i18n.Message{
+				ID:    "responses.workerResponse.InvitePageDesc",
+				Other: "If you want to speed up Bot's work, invite WORKER BOTs from [AutoMuteUs68](https://www.automuteus.68-muya.com/)!",
+			}),
+			Inline: false,
+		},
+	}
+
+	msg := discordgo.MessageEmbed{
+		URL:  "https://www.automuteus.68-muya.com/",
+		Type: "",
+		Title: sett.LocalizeMessage(&i18n.Message{
+			ID:    "responses.wokerResponse.Title",
+			Other: "🤖 Invite WORKER BOTs 🤖",
+		}),
+		Description: desc,
+		Timestamp:   time.Now().Format(ISO8601),
+		Color:       10181046, // PURPLE
+		Footer:      nil,
+		Image:       nil,
+		Thumbnail:   nil,
+		Video:       nil,
+		Provider:    nil,
+		Author:      nil,
+		Fields:      fields,
+	}
+	return &msg
+}
+>>>>>>> add_old-customize
