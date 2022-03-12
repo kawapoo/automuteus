@@ -974,8 +974,6 @@ func (bot *Bot) privacyResponse(guildID, authorID, arg string, sett *settings.Gu
 	}
 	return &msg
 }
-<<<<<<< HEAD
-=======
 
 func workerEmbedResponse(guildID string, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	desc := ""
@@ -1015,4 +1013,3 @@ func workerEmbedResponse(guildID string, sett *settings.GuildSettings) *discordg
 	}
 	return &msg
 }
->>>>>>> add_old-customize
