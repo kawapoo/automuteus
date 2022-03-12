@@ -421,6 +421,8 @@ func init() {
 			Emoji:      "🤖",
 			IsAdmin:    false,
 			IsOperator: false,
+
+			fn: commandFnWorkerBOT,
 		},
 		{
 			CommandType: CommandEnumStats,
