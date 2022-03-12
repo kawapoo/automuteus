@@ -552,7 +552,7 @@ func gameOverMessage(dgs *GameState, emojis AlivenessEmojis, sett *settings.Guil
 func getThumbnailFromMap(playMap game.PlayMap, sett *settings.GuildSettings) *discordgo.MessageEmbedThumbnail {
 	var thumbNail *discordgo.MessageEmbedThumbnail = nil
 	if playMap != game.EMPTYMAP {
-		mapItem, err := amongus.NewMapItem(game.MapNames[playMap])
+		mapItem, err := amongus.NewMapItem(game.MapNames[playMap], sett)
 		if err != nil {
 			log.Println(err)
 		} else {
