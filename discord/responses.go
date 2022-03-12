@@ -975,7 +975,7 @@ func (bot *Bot) privacyResponse(guildID, authorID, arg string, sett *settings.Gu
 	return &msg
 }
 
-func workerEmbedResponse(guildID string, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func workerEmbedResponse(guildID string, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	desc := ""
 	fields := []*discordgo.MessageEmbedField{}
 

@@ -421,6 +421,8 @@ func init() {
 			Emoji:      "🤖",
 			IsAdmin:    false,
 			IsOperator: false,
+
+			fn: commandFnWorkerBOT,
 		},
 		{
 			CommandType: CommandEnumStats,
@@ -1110,5 +1112,5 @@ func commandFnWorkerBOT(
 	_ []string,
 	_ *Command,
 ) (string, interface{}) {
-	return message.ChannelID, workerEmbedResponse(m.GuildID, sett)
+	return message.ChannelID, workerEmbedResponse(message.GuildID, sett)
 }
