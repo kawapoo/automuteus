@@ -36,11 +36,7 @@ const (
 	CommandEnumDebugState
 	CommandEnumASCII
 	CommandEnumStats
-<<<<<<< HEAD
-	CommandEnumPremium
-=======
 	CommandEnumWorkerBOT
->>>>>>> add_old-customize
 )
 
 const NoLock string = "Could not obtain lock"
@@ -405,30 +401,6 @@ func init() {
 			fn: commandFnSettings,
 		},
 		{
-<<<<<<< HEAD
-			CommandType: CommandEnumPremium,
-			Command:     "premium",
-			Example:     "premium",
-			ShortDesc: &i18n.Message{
-				ID:    "commands.AllCommands.Premium.shortDesc",
-				Other: "View Premium Bot Features",
-			},
-			Description: &i18n.Message{
-				ID:    "commands.AllCommands.Premium.desc",
-				Other: "View all the features and perks of Premium AutoMuteUs membership",
-			},
-			Arguments: &i18n.Message{
-				ID:    "commands.AllCommands.Premium.args",
-				Other: "None",
-			},
-			Aliases:    []string{"donate", "paypal", "prem", "$"},
-			IsSecret:   false,
-			Emoji:      "💎",
-			IsAdmin:    false,
-			IsOperator: false,
-
-			fn: commandFnPremium,
-=======
 			CommandType: CommandEnumWorkerBOT,
 			Command:     "workerbot",
 			Example:     "workerbot",
@@ -451,7 +423,6 @@ func init() {
 			IsOperator: false,
 
 			fn: commandFnWorkerBOT,
->>>>>>> add_old-customize
 		},
 		{
 			CommandType: CommandEnumStats,
@@ -1130,8 +1101,6 @@ func commandFnPremium(
 		}
 	}
 }
-<<<<<<< HEAD
-=======
 
 func commandFnWorkerBOT(
 	bot *Bot,
@@ -1145,4 +1114,3 @@ func commandFnWorkerBOT(
 ) (string, interface{}) {
 	return message.ChannelID, workerEmbedResponse(message.GuildID, sett)
 }
->>>>>>> add_old-customize
