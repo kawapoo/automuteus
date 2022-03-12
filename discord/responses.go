@@ -3,19 +3,19 @@ package discord
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"github.com/automuteus/utils/pkg/game"
-	"github.com/automuteus/utils/pkg/premium"
-	"github.com/automuteus/utils/pkg/rediskey"
-	"github.com/denverquane/amongusdiscord/discord/command"
-	"github.com/denverquane/amongusdiscord/discord/setting"
+	"github.com/automuteus/utils/pkg/discord"
+	"github.com/automuteus/utils/pkg/settings"
 	"log"
 	"strings"
 	"time"
 
-	"github.com/denverquane/amongusdiscord/amongus"
-	"github.com/denverquane/amongusdiscord/storage"
+	"github.com/automuteus/automuteus/discord/setting"
+	"github.com/automuteus/utils/pkg/game"
+	"github.com/automuteus/utils/pkg/premium"
+	"github.com/automuteus/utils/pkg/rediskey"
+
+	"github.com/automuteus/automuteus/amongus"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -27,7 +27,7 @@ const ISO8601 = "2006-01-02T15:04:05-0700"
 
 const BasePremiumURL = "https://automute.us/premium?guild="
 
-func helpResponse(isAdmin, isPermissioned bool, commandPrefix string, commands []command.Command, sett *storage.GuildSettings) discordgo.MessageEmbed {
+func helpResponse(isAdmin, isPermissioned bool, commands []Command, sett *settings.GuildSettings) discordgo.MessageEmbed {
 	embed := discordgo.MessageEmbed{
 		URL:  "",
 		Type: "",
@@ -37,16 +37,16 @@ func helpResponse(isAdmin, isPermissioned bool, commandPrefix string, commands [
 		}),
 		Description: sett.LocalizeMessage(&i18n.Message{
 			ID:    "responses.helpResponse.SubTitle",
-			Other: "[View the Github Project](https://github.com/denverquane/automuteus) or [Join our Discord](https://discord.gg/ZkqZSWF)\n\nType `{{.CommandPrefix}} help <command>` to see more details on a command!",
+			Other: "[View the Github Project](https://github.com/automuteus/automuteus) or [Join our Discord](https://discord.gg/ZkqZSWF)\n\nType `{{.CommandPrefix}} help <command>` to see more details on a command!",
 		},
 			map[string]interface{}{
-				"CommandPrefix": commandPrefix,
+				"CommandPrefix": sett.GetCommandPrefix(),
 			}),
 		Timestamp: "",
 		Color:     15844367, // GOLD
 		Image:     nil,
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL:      "https://github.com/denverquane/automuteus/blob/master/assets/BotProfilePicture.png?raw=true",
+			URL:      "https://github.com/automuteus/automuteus/blob/master/assets/BotProfilePicture.png?raw=true",
 			ProxyURL: "",
 			Width:    0,
 			Height:   0,
@@ -59,7 +59,7 @@ func helpResponse(isAdmin, isPermissioned bool, commandPrefix string, commands [
 
 	fields := make([]*discordgo.MessageEmbedField, 0)
 	for _, v := range commands {
-		if !v.IsSecret && v.CommandType != command.Help && v.CommandType != command.Null {
+		if !v.IsSecret && v.CommandType != CommandEnumHelp {
 			if (!v.IsAdmin || isAdmin) && (!v.IsOperator || isPermissioned) {
 				fields = append(fields, &discordgo.MessageEmbedField{
 					Name:   v.Emoji + " " + v.Command,
@@ -81,7 +81,7 @@ func helpResponse(isAdmin, isPermissioned bool, commandPrefix string, commands [
 	return embed
 }
 
-func settingResponse(commandPrefix string, settings []setting.Setting, sett *storage.GuildSettings, prem bool) *discordgo.MessageEmbed {
+func settingResponse(commandPrefix string, settings []setting.Setting, sett *settings.GuildSettings, prem bool) *discordgo.MessageEmbed {
 	embed := discordgo.MessageEmbed{
 		URL:  "",
 		Type: "",
@@ -156,7 +156,7 @@ func settingResponse(commandPrefix string, settings []setting.Setting, sett *sto
 	return &embed
 }
 
-func (bot *Bot) infoResponse(guildID string, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func (bot *Bot) infoResponse(guildID string, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	version, commit := rediskey.GetVersionAndCommit(context.Background(), bot.RedisInterface.client)
 	if strings.HasPrefix(version, "6.9") {
 		version = "😎 " + version + " 😎"
@@ -301,9 +301,9 @@ func (bot *Bot) infoResponse(guildID string, sett *storage.GuildSettings) *disco
 	return &embed
 }
 
-func (bot *Bot) gameStateResponse(dgs *GameState, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func (bot *Bot) gameStateResponse(dgs *GameState, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	// we need to generate the messages based on the state of the game
-	messages := map[game.Phase]func(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSettings) *discordgo.MessageEmbed{
+	messages := map[game.Phase]func(dgs *GameState, emojis AlivenessEmojis, sett *settings.GuildSettings) *discordgo.MessageEmbed{
 		game.MENU:     menuMessage,
 		game.LOBBY:    lobbyMessage,
 		game.TASKS:    gamePlayMessage,
@@ -313,7 +313,7 @@ func (bot *Bot) gameStateResponse(dgs *GameState, sett *storage.GuildSettings) *
 	return messages[dgs.AmongUsData.Phase](dgs, bot.StatusEmojis, sett)
 }
 
-func lobbyMetaEmbedFields(room, region string, author, vc string, playerCount int, linkedPlayers int, sett *storage.GuildSettings) []*discordgo.MessageEmbedField {
+func lobbyMetaEmbedFields(room, region string, author, voiceChannelID string, playerCount int, linkedPlayers int, sett *settings.GuildSettings) []*discordgo.MessageEmbedField {
 	gameInfoFields := make([]*discordgo.MessageEmbedField, 0)
 	if author != "" {
 		gameInfoFields = append(gameInfoFields, &discordgo.MessageEmbedField{
@@ -321,17 +321,17 @@ func lobbyMetaEmbedFields(room, region string, author, vc string, playerCount in
 				ID:    "responses.lobbyMetaEmbedFields.Host",
 				Other: "Host",
 			}),
-			Value:  mentionByUserID(author),
+			Value:  discord.MentionByUserID(author),
 			Inline: true,
 		})
 	}
-	if vc != "" {
+	if voiceChannelID != "" {
 		gameInfoFields = append(gameInfoFields, &discordgo.MessageEmbedField{
 			Name: sett.LocalizeMessage(&i18n.Message{
 				ID:    "responses.lobbyMetaEmbedFields.VoiceChannel",
 				Other: "Voice Channel",
 			}),
-			Value:  vc,
+			Value:  discord.MentionByChannelID(voiceChannelID),
 			Inline: true,
 		})
 	}
@@ -376,7 +376,7 @@ func lobbyMetaEmbedFields(room, region string, author, vc string, playerCount in
 	return gameInfoFields
 }
 
-func menuMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func menuMessage(dgs *GameState, _ AlivenessEmojis, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	color := 15158332 // red
 	desc := ""
 	var footer *discordgo.MessageEmbedFooter
@@ -407,17 +407,17 @@ func menuMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSett
 				ID:    "responses.lobbyMetaEmbedFields.Host",
 				Other: "Host",
 			}),
-			Value:  mentionByUserID(author),
+			Value:  discord.MentionByUserID(author),
 			Inline: true,
 		})
 	}
-	if dgs.Tracking.ChannelName != "" {
+	if dgs.Tracking.ChannelID != "" {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name: sett.LocalizeMessage(&i18n.Message{
 				ID:    "responses.lobbyMetaEmbedFields.VoiceChannel",
 				Other: "Voice Channel",
 			}),
-			Value:  dgs.Tracking.ChannelName,
+			Value:  discord.MentionByChannelID(dgs.Tracking.ChannelID),
 			Inline: true,
 		})
 	}
@@ -450,9 +450,9 @@ func menuMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSett
 	return &msg
 }
 
-func lobbyMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func lobbyMessage(dgs *GameState, emojis AlivenessEmojis, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	room, region, playMap := dgs.AmongUsData.GetRoomRegionMap()
-	gameInfoFields := lobbyMetaEmbedFields(room, region, dgs.GameStateMsg.LeaderID, dgs.Tracking.ChannelName, dgs.AmongUsData.GetNumDetectedPlayers(), dgs.GetCountLinked(), sett)
+	gameInfoFields := lobbyMetaEmbedFields(room, region, dgs.GameStateMsg.LeaderID, dgs.Tracking.ChannelID, dgs.AmongUsData.GetNumDetectedPlayers(), dgs.GetCountLinked(), sett)
 
 	listResp := dgs.ToEmojiEmbedFields(emojis, sett)
 	listResp = append(gameInfoFields, listResp...)
@@ -501,7 +501,7 @@ func lobbyMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSet
 	return &msg
 }
 
-func gameOverMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSettings, winners string) *discordgo.MessageEmbed {
+func gameOverMessage(dgs *GameState, emojis AlivenessEmojis, sett *settings.GuildSettings, winners string) *discordgo.MessageEmbed {
 	_, _, playMap := dgs.AmongUsData.GetRoomRegionMap()
 
 	listResp := dgs.ToEmojiEmbedFields(emojis, sett)
@@ -549,10 +549,10 @@ func gameOverMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.Guild
 	return &msg
 }
 
-func getThumbnailFromMap(playMap game.PlayMap, sett *storage.GuildSettings) *discordgo.MessageEmbedThumbnail {
+func getThumbnailFromMap(playMap game.PlayMap, sett *settings.GuildSettings) *discordgo.MessageEmbedThumbnail {
 	var thumbNail *discordgo.MessageEmbedThumbnail = nil
 	if playMap != game.EMPTYMAP {
-		mapItem, err := NewMapItem(game.MapNames[playMap])
+		mapItem, err := amongus.NewMapItem(game.MapNames[playMap])
 		if err != nil {
 			log.Println(err)
 		} else {
@@ -570,7 +570,7 @@ func getThumbnailFromMap(playMap game.PlayMap, sett *storage.GuildSettings) *dis
 	return thumbNail
 }
 
-func gamePlayMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func gamePlayMessage(dgs *GameState, emojis AlivenessEmojis, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	phase := dgs.AmongUsData.GetPhase()
 	playMap := dgs.AmongUsData.GetPlayMap()
 	// send empty fields because we don't need to display those fields during the game...
@@ -578,7 +578,7 @@ func gamePlayMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.Guild
 	desc := ""
 
 	desc = dgs.makeDescription(sett)
-	gameInfoFields := lobbyMetaEmbedFields("", "", dgs.GameStateMsg.LeaderID, dgs.Tracking.ChannelName, dgs.AmongUsData.GetNumDetectedPlayers(), dgs.GetCountLinked(), sett)
+	gameInfoFields := lobbyMetaEmbedFields("", "", dgs.GameStateMsg.LeaderID, dgs.Tracking.ChannelID, dgs.AmongUsData.GetNumDetectedPlayers(), dgs.GetCountLinked(), sett)
 	listResp = append(gameInfoFields, listResp...)
 
 	var color int
@@ -611,7 +611,7 @@ func gamePlayMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.Guild
 	return &msg
 }
 
-func (dgs *GameState) makeDescription(sett *storage.GuildSettings) string {
+func (dgs *GameState) makeDescription(sett *settings.GuildSettings) string {
 	buf := bytes.NewBuffer([]byte{})
 	if !dgs.Running {
 		buf.WriteString(sett.LocalizeMessage(&i18n.Message{
@@ -625,9 +625,9 @@ func (dgs *GameState) makeDescription(sett *storage.GuildSettings) string {
 	return buf.String()
 }
 
-func premiumEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func premiumEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	desc := ""
-	fields := []*discordgo.MessageEmbedField{}
+	var fields []*discordgo.MessageEmbedField
 
 	if tier != premium.FreeTier {
 		if daysRem > 0 || daysRem == premium.NoExpiryCode {
@@ -773,46 +773,7 @@ func premiumEmbedResponse(guildID string, tier premium.Tier, daysRem int, sett *
 	return &msg
 }
 
-func workerEmbedResponse(guildID string, sett *storage.GuildSettings) *discordgo.MessageEmbed {
-	desc := ""
-	fields := []*discordgo.MessageEmbedField{}
-
-	fields = []*discordgo.MessageEmbedField{
-		{
-			Name: sett.LocalizeMessage(&i18n.Message{
-				ID:    "responses.workerResponse.InvitePage",
-				Other: "Invite WORKER BOTs",
-			}),
-			Value: sett.LocalizeMessage(&i18n.Message{
-				ID:    "responses.workerResponse.InvitePageDesc",
-				Other: "If you want to speed up Bot's work, invite WORKER BOTs from [AutoMuteUs68](https://www.automuteus.68-muya.com/)!",
-			}),
-			Inline: false,
-		},
-	}
-
-	msg := discordgo.MessageEmbed{
-		URL:  "https://www.automuteus.68-muya.com/",
-		Type: "",
-		Title: sett.LocalizeMessage(&i18n.Message{
-			ID:    "responses.wokerResponse.Title",
-			Other: "🤖 Invite WORKER BOTs 🤖",
-		}),
-		Description: desc,
-		Timestamp:   time.Now().Format(ISO8601),
-		Color:       10181046, // PURPLE
-		Footer:      nil,
-		Image:       nil,
-		Thumbnail:   nil,
-		Video:       nil,
-		Provider:    nil,
-		Author:      nil,
-		Fields:      fields,
-	}
-	return &msg
-}
-
-func nonPremiumSettingResponse(sett *storage.GuildSettings) string {
+func nonPremiumSettingResponse(sett *settings.GuildSettings) string {
 	return sett.LocalizeMessage(&i18n.Message{
 		ID:    "responses.nonPremiumSetting.Desc",
 		Other: "Sorry, but that setting is reserved for AutoMuteUs Premium users! See `{{.CommandPrefix}} premium` for details",
@@ -828,7 +789,7 @@ var BotInvites = []string{
 	"https://discord.com/api/oauth2/authorize?client_id=780589033033302036&permissions=12582912&scope=bot", // amu4
 	"https://discord.com/api/oauth2/authorize?client_id=780323801173983262&permissions=12582912&scope=bot"} // amu3
 
-func premiumInvitesEmbed(tier premium.Tier, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func premiumInvitesEmbed(tier premium.Tier, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	desc := ""
 	fields := []*discordgo.MessageEmbedField{}
 
@@ -887,7 +848,7 @@ func premiumInvitesEmbed(tier premium.Tier, sett *storage.GuildSettings) *discor
 	return &msg
 }
 
-func (bot *Bot) privacyResponse(guildID, authorID, arg string, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+func (bot *Bot) privacyResponse(guildID, authorID, arg string, sett *settings.GuildSettings) *discordgo.MessageEmbed {
 	desc := ""
 
 	switch arg {
@@ -1014,22 +975,41 @@ func (bot *Bot) privacyResponse(guildID, authorID, arg string, sett *storage.Gui
 	return &msg
 }
 
-func extractUserIDFromMention(mention string) (string, error) {
-	// nickname format
-	switch {
-	case strings.HasPrefix(mention, "<@!") && strings.HasSuffix(mention, ">"):
-		return mention[3 : len(mention)-1], nil
-	case strings.HasPrefix(mention, "<@") && strings.HasSuffix(mention, ">"):
-		return mention[2 : len(mention)-1], nil
-	default:
-		return "", errors.New("mention does not conform to the correct format")
-	}
-}
+func workerEmbedResponse(guildID string, sett *storage.GuildSettings) *discordgo.MessageEmbed {
+	desc := ""
+	fields := []*discordgo.MessageEmbedField{}
 
-func extractRoleIDFromMention(mention string) (string, error) {
-	// role is formatted <&123456>
-	if strings.HasPrefix(mention, "<@&") && strings.HasSuffix(mention, ">") {
-		return mention[3 : len(mention)-1], nil
+	fields = []*discordgo.MessageEmbedField{
+		{
+			Name: sett.LocalizeMessage(&i18n.Message{
+				ID:    "responses.workerResponse.InvitePage",
+				Other: "Invite WORKER BOTs",
+			}),
+			Value: sett.LocalizeMessage(&i18n.Message{
+				ID:    "responses.workerResponse.InvitePageDesc",
+				Other: "If you want to speed up Bot's work, invite WORKER BOTs from [AutoMuteUs68](https://www.automuteus.68-muya.com/)!",
+			}),
+			Inline: false,
+		},
 	}
-	return "", errors.New("mention does not conform to the correct format")
+
+	msg := discordgo.MessageEmbed{
+		URL:  "https://www.automuteus.68-muya.com/",
+		Type: "",
+		Title: sett.LocalizeMessage(&i18n.Message{
+			ID:    "responses.wokerResponse.Title",
+			Other: "🤖 Invite WORKER BOTs 🤖",
+		}),
+		Description: desc,
+		Timestamp:   time.Now().Format(ISO8601),
+		Color:       10181046, // PURPLE
+		Footer:      nil,
+		Image:       nil,
+		Thumbnail:   nil,
+		Video:       nil,
+		Provider:    nil,
+		Author:      nil,
+		Fields:      fields,
+	}
+	return &msg
 }

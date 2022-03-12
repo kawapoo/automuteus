@@ -3,21 +3,21 @@ package discord
 import (
 	"context"
 	"fmt"
-	"github.com/automuteus/galactus/broker"
-	"github.com/automuteus/utils/pkg/game"
-	"github.com/automuteus/utils/pkg/premium"
-	"github.com/automuteus/utils/pkg/task"
-	"github.com/bsm/redislock"
-	redis_common "github.com/denverquane/amongusdiscord/common"
-	"github.com/denverquane/amongusdiscord/discord/command"
-	"github.com/denverquane/amongusdiscord/metrics"
+	"github.com/automuteus/utils/pkg/discord"
+	"github.com/automuteus/utils/pkg/settings"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/denverquane/amongusdiscord/storage"
+	redis_common "github.com/automuteus/automuteus/common"
+	"github.com/automuteus/automuteus/metrics"
+	"github.com/automuteus/galactus/broker"
+	"github.com/automuteus/utils/pkg/game"
+	"github.com/automuteus/utils/pkg/premium"
+	"github.com/automuteus/utils/pkg/task"
+	"github.com/bsm/redislock"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -52,18 +52,9 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 
 	contents := m.Content
 	sett := bot.StorageInterface.GetGuildSettings(m.GuildID)
-	prefix := sett.GetCommandPrefix()
 
-	if strings.Contains(m.Content, "<@!"+s.State.User.ID+">") {
-		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
-			ID:    "message_handlers.handleMessageCreate.respondPrefix",
-			Other: "I respond to the prefix {{.CommandPrefix}}",
-		},
-			map[string]interface{}{
-				"CommandPrefix": prefix,
-			}))
-		return
-	}
+	// can be a guild's old prefix setting, or @AutoMuteUs
+	prefix := sett.GetCommandPrefix()
 
 	globalPrefix := os.Getenv("AUTOMUTEUS_GLOBAL_PREFIX")
 	if globalPrefix != "" && strings.HasPrefix(contents, globalPrefix) {
@@ -71,7 +62,11 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 		prefix = globalPrefix
 	}
 
-	if strings.HasPrefix(contents, prefix) {
+	// TODO regex
+	// have to check the actual mention format, not the explicit string "@AutoMuteUs"
+	mention := "<@!" + s.State.User.ID + ">"
+	altMention := "<@" + s.State.User.ID + ">"
+	if strings.HasPrefix(contents, prefix) || strings.HasPrefix(contents, mention) || strings.HasPrefix(contents, altMention) {
 		if redis_common.IsUserRateLimitedGeneral(bot.RedisInterface.client, m.Author.ID) {
 			banned := redis_common.IncrementRateLimitExceed(bot.RedisInterface.client, m.Author.ID)
 			if banned {
@@ -80,7 +75,7 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 					Other: "I'm ignoring {{.User}} for the next 5 minutes, stop spamming",
 				},
 					map[string]interface{}{
-						"User": mentionByUserID(m.Author.ID),
+						"User": discord.MentionByUserID(m.Author.ID),
 					}))
 			} else {
 				msg, err := s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
@@ -88,7 +83,7 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 					Other: "{{.User}}, you're issuing commands too fast! Please slow down!",
 				},
 					map[string]interface{}{
-						"User": mentionByUserID(m.Author.ID),
+						"User": discord.MentionByUserID(m.Author.ID),
 					}))
 				if err == nil {
 					go func() {
@@ -102,11 +97,7 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 		}
 		redis_common.MarkUserRateLimit(bot.RedisInterface.client, m.Author.ID, "", 0)
 
-		oldLen := len(contents)
-		contents = strings.Replace(contents, prefix+" ", "", 1)
-		if len(contents) == oldLen { // didn't have a space
-			contents = strings.Replace(contents, prefix, "", 1)
-		}
+		contents = removePrefixOrMention(contents, prefix, mention, altMention)
 
 		isAdmin, isPermissioned := false, false
 
@@ -128,16 +119,16 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 			isPermissioned = len(sett.PermissionRoleIDs) == 0 || sett.HasRolePerms(m.Member)
 		}
 
+		deleteUserMessage := false
 		if len(contents) == 0 {
 			if len(prefix) <= 1 {
 				// prevent bot from spamming help message whenever the single character
 				// prefix is sent by mistake
 				return
 			}
-			embed := helpResponse(isAdmin, isPermissioned, prefix, command.AllCommands, sett)
+			embed := helpResponse(isAdmin, isPermissioned, allCommands, sett)
 			s.ChannelMessageSendEmbed(m.ChannelID, &embed)
-			// delete the user's message
-			deleteMessage(s, m.ChannelID, m.ID)
+			deleteUserMessage = true
 		} else {
 			args := strings.Split(contents, " ")
 
@@ -145,9 +136,27 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 				args[i] = strings.ToLower(v)
 			}
 
-			bot.HandleCommand(isAdmin, isPermissioned, sett, s, g, m, args)
+			deleteUserMessage = bot.HandleCommand(isAdmin, isPermissioned, sett, s, g, m, args)
+		}
+		if deleteUserMessage {
+			deleteMessage(s, m.ChannelID, m.ID)
+			metrics.RecordDiscordRequests(bot.RedisInterface.client, metrics.MessageCreateDelete, 1)
 		}
 	}
+}
+
+// TODO refactor to use regex, could do the matching + removal easier
+func removePrefixOrMention(contents, prefix, mention, altMention string) string {
+	oldLen := len(contents)
+	contents = strings.Replace(contents, prefix+" ", "", 1)
+	contents = strings.Replace(contents, mention+" ", "", 1)
+	contents = strings.Replace(contents, altMention+" ", "", 1)
+	if len(contents) == oldLen { // wasn't replaced (no space)
+		contents = strings.Replace(contents, prefix, "", 1)
+		contents = strings.Replace(contents, mention, "", 1)
+		contents = strings.Replace(contents, altMention, "", 1)
+	}
+	return contents
 }
 
 func (bot *Bot) handleReactionGameStartAdd(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
@@ -193,14 +202,14 @@ func (bot *Bot) handleReactionGameStartAdd(s *discordgo.Session, m *discordgo.Me
 						Other: "I'm ignoring {{.User}} for the next 5 minutes, stop spamming",
 					},
 						map[string]interface{}{
-							"User": mentionByUserID(m.UserID),
+							"User": discord.MentionByUserID(m.UserID),
 						}))
 				} else {
 					msg, err := s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 						ID:    "message_handlers.handleReactionGameStartAdd.generalRatelimit",
 						Other: "{{.User}}, you're reacting too fast! Please slow down!",
 					}, map[string]interface{}{
-						"User": mentionByUserID(m.UserID),
+						"User": discord.MentionByUserID(m.UserID),
 					}))
 					if err == nil {
 						go func() {
@@ -366,7 +375,7 @@ func (bot *Bot) handleVoiceStateChange(s *discordgo.Session, m *discordgo.VoiceS
 	bot.RedisInterface.SetDiscordGameState(dgs, stateLock)
 }
 
-func (bot *Bot) handleNewGameMessage(s *discordgo.Session, m *discordgo.MessageCreate, g *discordgo.Guild, sett *storage.GuildSettings) {
+func (bot *Bot) handleNewGameMessage(m *discordgo.MessageCreate, g *discordgo.Guild, sett *settings.GuildSettings) (string, interface{}) {
 	lock, dgs := bot.RedisInterface.GetDiscordGameStateAndLock(GameStateRequest{
 		GuildID:     m.GuildID,
 		TextChannel: m.ChannelID,
@@ -375,8 +384,7 @@ func (bot *Bot) handleNewGameMessage(s *discordgo.Session, m *discordgo.MessageC
 	for lock == nil {
 		if retries > 10 {
 			log.Println("DEADLOCK in obtaining game state lock, upon calling new")
-			s.ChannelMessageSend(m.ChannelID, "I wasn't able to make a new game, maybe try in a different text channel?")
-			return
+			return m.ChannelID, "I wasn't able to make a new game, maybe try in a different text channel?"
 		}
 		retries++
 		lock, dgs = bot.RedisInterface.GetDiscordGameStateAndLock(GameStateRequest{
@@ -386,29 +394,28 @@ func (bot *Bot) handleNewGameMessage(s *discordgo.Session, m *discordgo.MessageC
 	}
 
 	if redis_common.IsUserRateLimitedSpecific(bot.RedisInterface.client, m.Author.ID, "NewGame") {
+		defer lock.Release(context.Background())
 		banned := redis_common.IncrementRateLimitExceed(bot.RedisInterface.client, m.Author.ID)
 		if banned {
-			s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			return m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 				ID:    "message_handlers.softban",
 				Other: "{{.User}} I'm ignoring your messages for the next 5 minutes, stop spamming",
 			}, map[string]interface{}{
-				"User": mentionByUserID(m.Author.ID),
-			}))
+				"User": discord.MentionByUserID(m.Author.ID),
+			})
 		} else {
-			s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			return m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 				ID:    "message_handlers.handleNewGameMessage.specificRatelimit",
 				Other: "{{.User}} You're creating games too fast! Please slow down!",
 			}, map[string]interface{}{
-				"User": mentionByUserID(m.Author.ID),
-			}))
+				"User": discord.MentionByUserID(m.Author.ID),
+			})
 		}
-		lock.Release(context.Background())
-		return
 	}
 
 	redis_common.MarkUserRateLimit(bot.RedisInterface.client, m.Author.ID, "NewGame", redis_common.NewGameRateLimitDuration)
 
-	channels, err := s.GuildChannels(m.GuildID)
+	channels, err := bot.PrimarySession.GuildChannels(m.GuildID)
 	if err != nil {
 		log.Println(err)
 	}
@@ -434,14 +441,13 @@ func (bot *Bot) handleNewGameMessage(s *discordgo.Session, m *discordgo.MessageC
 		}
 	}
 	if tracking.ChannelID == "" {
-		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+		defer lock.Release(context.Background())
+		return m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 			ID:    "message_handlers.handleNewGameMessage.noChannel",
 			Other: "{{.User}}, please join a voice channel before starting a match!",
 		}, map[string]interface{}{
-			"User": mentionByUserID(m.Author.ID),
-		}))
-		lock.Release(context.Background())
-		return
+			"User": discord.MentionByUserID(m.Author.ID),
+		})
 	}
 
 	// allow people with a previous game going to be able to make new games
@@ -468,17 +474,16 @@ func (bot *Bot) handleNewGameMessage(s *discordgo.Session, m *discordgo.MessageC
 				num = DefaultMaxActiveGames
 			}
 			if activeGames > num {
-				s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+				defer lock.Release(context.Background())
+				return m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 					ID: "message_handlers.handleNewGameMessage.lockout",
 					Other: "If I start any more games, Discord will lock me out, or throttle the games I'm running! 😦\n" +
 						"Please try again in a few minutes, or consider AutoMuteUs Premium (`{{.CommandPrefix}} premium`)\n" +
 						"Current Games: {{.Games}}",
 				}, map[string]interface{}{
-					"CommandPrefix": sett.CommandPrefix,
+					"CommandPrefix": sett.GetCommandPrefix(),
 					"Games":         fmt.Sprintf("%d/%d", activeGames, num),
-				}))
-				lock.Release(context.Background())
-				return
+				})
 			}
 		}
 	}
@@ -548,12 +553,15 @@ func (bot *Bot) handleNewGameMessage(s *discordgo.Session, m *discordgo.MessageC
 
 	log.Println("Generated URL for connection: " + hyperlink)
 
-	sendMessageDM(s, m.Author.ID, &embed)
+	sendMessageDM(bot.PrimarySession, m.Author.ID, &embed)
 
-	bot.handleGameStartMessage(s, m, sett, tracking, g, connectCode)
+	bot.handleGameStartMessage(m, sett, tracking, g, connectCode)
+
+	// already sent required messages
+	return "", nil
 }
 
-func (bot *Bot) handleGameStartMessage(s *discordgo.Session, m *discordgo.MessageCreate, sett *storage.GuildSettings, channel TrackingChannel, g *discordgo.Guild, connCode string) {
+func (bot *Bot) handleGameStartMessage(m *discordgo.MessageCreate, sett *settings.GuildSettings, channel TrackingChannel, g *discordgo.Guild, connCode string) {
 	lock, dgs := bot.RedisInterface.GetDiscordGameStateAndLock(GameStateRequest{
 		GuildID:     m.GuildID,
 		TextChannel: m.ChannelID,
@@ -565,7 +573,7 @@ func (bot *Bot) handleGameStartMessage(s *discordgo.Session, m *discordgo.Messag
 	}
 	dgs.AmongUsData.SetRoomRegionMap("", "", game.EMPTYMAP)
 
-	dgs.clearGameTracking(s)
+	dgs.clearGameTracking(bot.PrimarySession)
 
 	dgs.Running = true
 
@@ -576,12 +584,12 @@ func (bot *Bot) handleGameStartMessage(s *discordgo.Session, m *discordgo.Messag
 		}
 		for _, v := range g.VoiceStates {
 			if v.ChannelID == channel.ChannelID {
-				dgs.checkCacheAndAddUser(g, s, v.UserID)
+				dgs.checkCacheAndAddUser(g, bot.PrimarySession, v.UserID)
 			}
 		}
 	}
 
-	dgs.CreateMessage(s, bot.gameStateResponse(dgs, sett), m.ChannelID, m.Author.ID)
+	dgs.CreateMessage(bot.PrimarySession, bot.gameStateResponse(dgs, sett), m.ChannelID, m.Author.ID)
 
 	bot.RedisInterface.SetDiscordGameState(dgs, lock)
 

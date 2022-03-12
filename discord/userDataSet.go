@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/denverquane/amongusdiscord/amongus"
+	"github.com/automuteus/automuteus/amongus"
 )
 
 type UserDataSet map[string]UserData
-
-func (dgs *GameState) UserDataSize() int {
-	return len(dgs.UserData)
-}
 
 func (dgs *GameState) GetCountLinked() int {
 	LinkedPlayerCount := 0

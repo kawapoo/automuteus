@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/automuteus/utils/pkg/locale"
+	storage2 "github.com/automuteus/utils/pkg/storage"
 	"io"
 	"log"
 	"math/rand"
@@ -14,15 +16,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/denverquane/amongusdiscord/locale"
-	"github.com/denverquane/amongusdiscord/storage"
+	"github.com/automuteus/automuteus/storage"
 
-	"github.com/denverquane/amongusdiscord/discord"
+	"github.com/automuteus/automuteus/discord"
 	"github.com/joho/godotenv"
 )
 
 var (
-	version = "6.15.1"
+	version = "6.16.0"
 	commit  = "none"
 	date    = "unknown"
 )
@@ -80,7 +81,7 @@ func discordMainWrapper() error {
 		return errors.New("no DISCORD_BOT_TOKEN provided")
 	}
 
-	extraTokens := []string{}
+	var extraTokens []string
 	extraTokenStr := strings.ReplaceAll(os.Getenv("WORKER_BOT_TOKENS"), " ", "")
 	if extraTokenStr != "" {
 		extraTokens = strings.Split(extraTokenStr, ",")
@@ -155,7 +156,7 @@ func discordMainWrapper() error {
 
 	locale.InitLang(os.Getenv("LOCALE_PATH"), os.Getenv("BOT_LANG"))
 
-	psql := storage.PsqlInterface{}
+	psql := storage2.PsqlInterface{}
 	pAddr := os.Getenv("POSTGRES_ADDR")
 	if pAddr == "" {
 		return errors.New("no POSTGRES_ADDR specified; exiting")
@@ -171,13 +172,19 @@ func discordMainWrapper() error {
 		return errors.New("no POSTGRES_PASS specified; exiting")
 	}
 
-	err = psql.Init(storage.ConstructPsqlConnectURL(pAddr, pUser, pPass))
+	err = psql.Init(storage2.ConstructPsqlConnectURL(pAddr, pUser, pPass))
 	if err != nil {
 		return err
 	}
 
 	if os.Getenv("AUTOMUTEUS_OFFICIAL") == "" {
-		go psql.LoadAndExecFromFile("./storage/postgres.sql")
+		go func() {
+			err := psql.LoadAndExecFromFile("./storage/postgres.sql")
+			if err != nil {
+				log.Println("Exiting with fatal error when attempting to execute postgres.sql:")
+				log.Fatal(err)
+			}
+		}()
 	}
 
 	log.Println("Bot is now running.  Press CTRL-C to exit.")
