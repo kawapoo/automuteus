@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"github.com/automuteus/utils/pkg/settings"
 )
 
 type MapItem struct {
@@ -23,7 +24,7 @@ func (m *MapItem) String() string {
 	return m.Name
 }
 
-func NewMapItem(name string) (*MapItem, error) {
+func NewMapItem(name string, sett *settings.GuildSettings) (*MapItem, error) {
 	switch strings.ToLower(name) {
 	case "the skeld", "the_skeld", "skeld":
 		name = "the_skeld"
@@ -44,17 +45,19 @@ func NewMapItem(name string) (*MapItem, error) {
 		BaseMapURL = "https://github.com/automuteus/automuteus/blob/master/assets/maps/"
 	}
 
+	BaseMapURL += sett.GetLanguage() + "/"
+
 	base, err := url.Parse(BaseMapURL)
 	if err != nil {
 		log.Println(err)
 	}
 
-	simpleURL, err := base.Parse(name + ".png?raw=true")
+	simpleURL, err := base.Parse(name + ".png")
 	if err != nil {
 		log.Println(err)
 	}
 
-	detailedURL, err := base.Parse(name + "_detailed.png?raw=true")
+	detailedURL, err := base.Parse(name + "_detailed.png")
 	if err != nil {
 		log.Println(err)
 	}
