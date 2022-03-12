@@ -786,7 +786,7 @@ func commandFnMap(
 			mapName = strings.Join(args[1:], " ")
 			mapVersion = sett.GetMapVersion()
 		}
-		mapItem, err := amongus.NewMapItem(mapName)
+		mapItem, err := amongus.NewMapItem(mapName, sett)
 		if err != nil {
 			log.Println(err)
 			return message.ChannelID, sett.LocalizeMessage(&i18n.Message{
