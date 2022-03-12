@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/kawapoo/utils/pkg/locale"
+	"github.com/automuteus/utils/pkg/locale"
 	storage2 "github.com/automuteus/utils/pkg/storage"
 	"io"
 	"log"

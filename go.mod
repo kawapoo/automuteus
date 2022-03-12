@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/automuteus/galactus v1.2.2
 	github.com/automuteus/utils v0.0.29
-	github.com/kawapoo/utils v0.0.29
 	github.com/bsm/redislock v0.7.1
 	github.com/bwmarrin/discordgo v0.24.0
 	github.com/go-redis/redis/v8 v8.8.0
@@ -16,3 +15,5 @@ require (
 	github.com/prometheus/client_golang v1.10.0
 	google.golang.org/protobuf v1.25.0 // indirect
 )
+
+replace github.com/automuteus/utils => github.com/kawapoo/utils v0.0.29
