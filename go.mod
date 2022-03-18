@@ -16,4 +16,4 @@ require (
 	google.golang.org/protobuf v1.25.0 // indirect
 )
 
-replace github.com/automuteus/utils => github.com/kawapoo/utils v0.0.31
+replace github.com/automuteus/utils => github.com/kawapoo/utils v0.1.0
